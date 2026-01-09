@@ -10,7 +10,7 @@ const moderation = require("./moderation");
 const personality = require("./personality");
 
 const TOKEN = process.env.TOKEN;
-const CLIENT_ID = "PUT_CLIENT_ID";
+const CLIENT_ID = "1455664767363715293";
 
 const client = new Client({
   intents: [
