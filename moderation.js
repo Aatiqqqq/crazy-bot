@@ -1,17 +1,45 @@
 const log = require("./logger");
 
-const spam = new Map();
+const spamTracker = new Map();
 
 module.exports = async function moderation(client, msg) {
-  if (!msg.content || msg.author.bot) return;
+  if (!msg.content) return;
+  if (msg.author.bot) return;
+  if (!msg.guild) return;
 
   const now = Date.now();
-  const last = spam.get(msg.author.id) || 0;
+  const data = spamTracker.get(msg.author.id) || {
+    last: 0,
+    count: 0
+  };
 
-  if (now - last < 2000) {
-    msg.reply("⚠️ Stop spamming!");
-    log(client, "MODERATION", `${msg.author.tag} warned for spam`);
+  // If messages are too fast
+  if (now - data.last < 2000) {
+    data.count += 1;
+  } else {
+    data.count = 1;
   }
 
-  spam.set(msg.author.id, now);
+  data.last = now;
+  spamTracker.set(msg.author.id, data);
+
+  // 🔴 SPAM DETECTED
+  if (data.count >= 3) {
+    try {
+      await msg.delete();
+
+      await msg.channel.send({
+        content: `⚠️ ${msg.author}, stop spamming!`,
+        allowedMentions: { users: [msg.author.id] }
+      });
+
+      log(
+        client,
+        "SPAM DELETED",
+        `${msg.author.tag} spammed in #${msg.channel.name}`
+      );
+    } catch (err) {
+      console.error("Spam delete error:", err.message);
+    }
+  }
 };
